@@ -154,6 +154,36 @@ function sumAssuredFor(product: string, premium: number): number {
   return Math.round((premium * multiple) / 10_000) * 10_000
 }
 
+/* ------------------------------- commission ------------------------------- */
+
+/**
+ * First-year commission. Rates are illustrative, not the published schedule —
+ * replace COMMISSION_BY_PRODUCT and CHANNEL_COMMISSION_FACTOR with the real
+ * slabs when you have them.
+ */
+export const COMMISSION_BY_PRODUCT: Record<string, number> = {
+  'SecureLife Term Plus': 25,
+  'WealthBuilder ULIP': 5,
+  'Guaranteed Income Plan': 18,
+  'Retirement Advantage': 7.5,
+  'Smart Savings Plus': 20,
+  'Child Future Secure': 18,
+}
+
+export const CHANNEL_COMMISSION_FACTOR: Record<string, number> = {
+  Agency: 1,
+  Broker: 0.95,
+  Bancassurance: 0.85,
+  Direct: 0.5,
+  Digital: 0.45,
+}
+
+export function commissionRateFor(product: string, channel: string): number {
+  const base = COMMISSION_BY_PRODUCT[product] ?? 15
+  const factor = CHANNEL_COMMISSION_FACTOR[channel] ?? 1
+  return Math.round(base * factor * 100) / 100
+}
+
 /* ----------------------------------- RFI ---------------------------------- */
 
 const RFI_LIBRARY: Record<PendingReason, { requirement: string; detail: string; owner: RfiItem['responsibility'] }[]> = {
@@ -342,6 +372,8 @@ for (let t = INCEPTION.getTime(); t <= TODAY.getTime(); t += DAY) {
       if (issueDate.getTime() <= TODAY.getTime()) {
         policySeq += 1
         const shortfall = rng() < 0.18 ? between(0.82, 0.97) : 1
+        const issuedPremium = Math.round((annualPremium * shortfall) / 100) * 100
+        const commissionRate = commissionRateFor(product, channel)
         issuances.push({
           id: `iss-${proposalSeq}`,
         employeeId,
@@ -356,10 +388,12 @@ for (let t = INCEPTION.getTime(); t <= TODAY.getTime(); t += DAY) {
           manager,
           advisor,
           submittedPremium: annualPremium,
-          issuedPremium: Math.round((annualPremium * shortfall) / 100) * 100,
+          issuedPremium,
           sumAssured,
           submissionDate: iso,
           turnaroundDays: tat,
+          commissionRate,
+          commissionAmount: Math.round((issuedPremium * commissionRate) / 100),
           policyStatus: weighted([
             { v: 'In Force' as const, w: 86 },
             { v: 'Free Look' as const, w: 6 },

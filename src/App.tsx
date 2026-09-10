@@ -9,6 +9,7 @@ import MyTeam from '@/pages/MyTeam'
 import SubmissionReport from '@/pages/SubmissionReport'
 import IssuanceReport from '@/pages/IssuanceReport'
 import PendingReport from '@/pages/PendingReport'
+import RfiReport from '@/pages/RfiReport'
 import WpiDumpReport from '@/pages/WpiDumpReport'
 
 /**
@@ -34,6 +35,7 @@ function ScopedApp() {
           <Route path="submission" element={<SubmissionReport />} />
           <Route path="issuance" element={<IssuanceReport />} />
           <Route path="pending" element={<PendingReport />} />
+          <Route path="rfi" element={<RfiReport />} />
           <Route path="wpi-dump" element={<WpiDumpReport />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

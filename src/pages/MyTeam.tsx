@@ -43,11 +43,12 @@ function MemberRow({
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-5 lg:w-[560px] lg:shrink-0">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-6 lg:w-[640px] lg:shrink-0">
         {[
           { label: 'Submitted', value: count(member.submissions) },
           { label: 'Issued', value: count(member.issued) },
           { label: 'Issued premium', value: inrCompact(member.issuedPremium), delta: member.premiumChangePct },
+          { label: 'Commission', value: inrCompact(member.commission) },
           { label: 'Placement', value: pct(member.placementRate) },
           { label: 'Pending · RFI', value: `${count(member.pending)} · ${count(member.openRfis)}` },
         ].map((cell) => (
@@ -136,8 +137,8 @@ export default function MyTeam() {
 
         {loading || !data ? (
           <>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-              {Array.from({ length: 5 }).map((_, i) => (
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+              {Array.from({ length: 6 }).map((_, i) => (
                 <MetricCardSkeleton key={i} />
               ))}
             </div>
@@ -163,12 +164,13 @@ export default function MyTeam() {
           </div>
         ) : (
           <>
-            <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+            <section className="grid grid-cols-2 gap-3 lg:grid-cols-6">
               {[
                 { label: 'Direct reports', value: count(data.members.length) },
                 { label: 'Team submissions', value: count(data.rollup.submissions) },
                 { label: 'Team issued', value: count(data.rollup.issued) },
                 { label: 'Team issued premium', value: inrCompact(data.rollup.issuedPremium) },
+                { label: 'Team commission', value: inrCompact(data.rollup.commission) },
                 { label: 'Pending · open RFIs', value: `${count(data.rollup.pending)} · ${count(data.rollup.openRfis)}` },
               ].map((s) => (
                 <div key={s.label} className="surface p-4">

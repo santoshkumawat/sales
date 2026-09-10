@@ -3,6 +3,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ClipboardList,
+  FileQuestion,
   FileStack,
   LayoutDashboard,
   ShieldCheck,
@@ -20,11 +21,13 @@ const NAV = [
   { to: '/submission', label: 'Submission', icon: ClipboardList },
   { to: '/issuance', label: 'Issuance', icon: ShieldCheck },
   { to: '/pending', label: 'Pending', icon: Timer },
+  { to: '/rfi', label: 'RFI', icon: FileQuestion },
   { to: '/wpi-dump', label: 'WPI Dump', icon: FileStack },
 ]
 
 const openPending = mockPending.filter((p) => p.ageDays > 15).length
 const openWpi = mockWpi.filter((w) => w.status === 'Action Required').length
+const overdueRfi = mockPending.reduce((n, p) => n + p.rfis.filter((r) => r.overdue).length, 0)
 
 export function AppSidebar({
   collapsed,
@@ -44,7 +47,7 @@ export function AppSidebar({
       )}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex flex-col bg-navy-900 text-navy-100 transition-[width,transform] duration-200 lg:static lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 flex h-full shrink-0 flex-col bg-navy-900 text-navy-100 transition-[width,transform] duration-200 lg:static lg:translate-x-0',
           collapsed ? 'w-[68px]' : 'w-[248px]',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         )}
@@ -53,12 +56,13 @@ export function AppSidebar({
           {collapsed ? <BrandMark className="h-7 w-7 shrink-0" /> : <BrandLogo />}
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 py-4">
           {!collapsed && (
             <p className="px-3 pb-2 text-[11px] font-medium text-navy-400">Reporting</p>
           )}
           {NAV.map(({ to, label, icon: Icon, end }) => {
-            const badge = to === '/pending' ? openPending : to === '/wpi-dump' ? openWpi : 0
+            const badge =
+              to === '/pending' ? openPending : to === '/rfi' ? overdueRfi : to === '/wpi-dump' ? openWpi : 0
             const link = (
               <NavLink
                 key={to}
@@ -105,7 +109,7 @@ export function AppSidebar({
         </nav>
 
         {!collapsed && (
-          <div className="mx-3 mb-3 rounded-xl bg-white/5 p-3">
+          <div className="mx-3 mb-3 shrink-0 rounded-xl bg-white/5 p-3">
             <p className="text-[12px] font-medium text-white">Batch refresh</p>
             <p className="mt-1 text-[11px] leading-relaxed text-navy-300">
               Submission, issuance and WPI feeds last synced today at 06:15 IST.
@@ -116,7 +120,7 @@ export function AppSidebar({
         <button
           onClick={onToggle}
           className={cn(
-            'hidden h-11 items-center gap-3 border-t border-white/10 px-4 text-[13px] text-navy-300 transition-colors hover:bg-white/5 hover:text-white lg:flex',
+            'hidden h-11 shrink-0 items-center gap-3 border-t border-white/10 px-4 text-[13px] text-navy-300 transition-colors hover:bg-white/5 hover:text-white lg:flex',
             collapsed && 'justify-center px-0',
           )}
         >

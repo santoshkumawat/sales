@@ -78,6 +78,9 @@ export interface IssuanceRecord {
   submissionDate: string
   turnaroundDays: number
   policyStatus: PolicyStatus
+  /** First-year commission percentage applied to the issued premium. */
+  commissionRate: number
+  commissionAmount: number
 }
 
 export type PendingReason =
@@ -228,5 +231,23 @@ export interface TopPerformer {
   channel: string
   policies: number
   premium: number
+  commission: number
   placementRate: number
+}
+
+/** One requirement, flattened out of its case for the RFI report. */
+export interface RfiRow extends RfiItem {
+  rowId: string
+  proposalNo: string
+  customer: string
+  product: string
+  channel: string
+  branch: string
+  region: string
+  manager: string
+  advisor: string
+  annualPremium: number
+  caseAgeDays: number
+  caseReason: PendingReason
+  case: PendingRecord
 }

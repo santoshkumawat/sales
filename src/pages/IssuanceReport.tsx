@@ -11,7 +11,8 @@ import { getIssuanceReport } from '@/services/reportService'
 import { useFilters } from '@/context/FilterContext'
 import { POLICY_STATUSES } from '@/data/mockInsuranceData'
 import type { IssuanceRecord } from '@/types'
-import { count, inr, shortDate } from '@/utils/format'
+import { AnalyticsCard } from '@/components/dashboard/AnalyticsCard'
+import { count, inr, inrCompact, pct, shortDate } from '@/utils/format'
 import { cn } from '@/utils/cn'
 
 const columns: Column<IssuanceRecord>[] = [
@@ -59,6 +60,21 @@ const columns: Column<IssuanceRecord>[] = [
     align: 'right',
   },
   {
+    key: 'commissionRate',
+    header: 'Comm. rate',
+    accessor: (r) => r.commissionRate,
+    cell: (r) => <span className="num text-navy-600">{pct(r.commissionRate, 2)}</span>,
+    align: 'right',
+    optional: true,
+  },
+  {
+    key: 'commissionAmount',
+    header: 'Commission',
+    accessor: (r) => r.commissionAmount,
+    cell: (r) => <span className="num font-medium text-reef-700">{inr(r.commissionAmount)}</span>,
+    align: 'right',
+  },
+  {
     key: 'submissionDate',
     header: 'Submitted on',
     accessor: (r) => r.submissionDate,
@@ -98,9 +114,9 @@ export default function IssuanceReport() {
       <ReportFilters statusGroup={{ key: 'statuses', title: 'Policy status', options: POLICY_STATUSES }} />
 
       <div className="space-y-4 p-4 md:p-6">
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {loading || !data
-            ? Array.from({ length: 4 }).map((_, i) => <MetricCardSkeleton key={i} />)
+            ? Array.from({ length: 6 }).map((_, i) => <MetricCardSkeleton key={i} />)
             : data.kpis.map((k) => <MetricCard key={k.key} kpi={k} />)}
         </section>
 
@@ -114,11 +130,11 @@ export default function IssuanceReport() {
           >
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.tatBuckets} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
-                <CartesianGrid stroke="#EEF2F8" vertical={false} />
-                <XAxis dataKey="name" tick={AXIS_STYLE} tickLine={false} axisLine={{ stroke: '#E2E8F0' }} />
+                <CartesianGrid stroke="#EAF2FB" vertical={false} />
+                <XAxis dataKey="name" tick={AXIS_STYLE} tickLine={false} axisLine={{ stroke: '#DCE7F3' }} />
                 <YAxis tick={AXIS_STYLE} tickLine={false} axisLine={false} />
                 <RTooltip
-                  cursor={{ fill: '#F5F7FA' }}
+                  cursor={{ fill: '#EFF5FC' }}
                   content={({ active, payload, label }) =>
                     active && payload?.length ? (
                       <ChartTooltipBox label={String(label)} rows={[{ name: 'Policies', value: count(Number(payload[0].value)) }]} />
@@ -127,12 +143,52 @@ export default function IssuanceReport() {
                 />
                 <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={64}>
                   {data.tatBuckets.map((b, i) => (
-                    <Cell key={b.name} fill={i >= 3 ? '#B45309' : '#118E85'} />
+                    <Cell key={b.name} fill={i >= 3 ? '#B45309' : '#1476E0'} />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>
+        )}
+
+        {!loading && data && (
+          <AnalyticsCard
+            title="Where the commission is earned"
+            description="First-year commission on issued business. Term pays a far higher percentage than unit linked, so premium mix moves this more than volume does."
+            bodyClassName="pb-5"
+          >
+            <div className="grid gap-6 sm:grid-cols-2">
+              {[
+                { title: 'By product', rows: data.commissionByProduct },
+                { title: 'By channel', rows: data.commissionByChannel },
+              ].map((block) => {
+                const max = Math.max(...block.rows.map((r) => r.premium), 1)
+                return (
+                  <div key={block.title}>
+                    <p className="mb-2 text-[12px] font-medium text-navy-500">{block.title}</p>
+                    <ul className="space-y-2">
+                      {block.rows.map((r) => (
+                        <li key={r.name}>
+                          <div className="flex items-baseline justify-between gap-3">
+                            <span className="truncate text-[12.5px] text-navy-700">{r.name}</span>
+                            <span className="num text-[12px] text-navy-500">
+                              {inrCompact(r.premium)} · {count(r.value)} policies
+                            </span>
+                          </div>
+                          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-navy-50">
+                            <div className="h-full rounded-full bg-reef-500" style={{ width: `${(r.premium / max) * 100}%` }} />
+                          </div>
+                        </li>
+                      ))}
+                      {block.rows.length === 0 && (
+                        <li className="py-3 text-[12.5px] text-navy-400">No issued business in this period.</li>
+                      )}
+                    </ul>
+                  </div>
+                )
+              })}
+            </div>
+          </AnalyticsCard>
         )}
 
         {loading || !data ? (

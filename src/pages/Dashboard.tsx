@@ -66,24 +66,26 @@ export default function Dashboard() {
       <ReportFilters />
 
       <div className="space-y-4 p-4 md:p-6">
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {loading || !data
-            ? Array.from({ length: 8 }).map((_, i) => <MetricCardSkeleton key={i} />)
+            ? Array.from({ length: 10 }).map((_, i) => <MetricCardSkeleton key={i} />)
             : data.kpis.map((k) => (
                 <MetricCard
                   key={k.key}
                   kpi={k}
-                  invertChange={k.key === 'pending' || k.key === 'wpi'}
+                  invertChange={k.key === 'pending' || k.key === 'wpi' || k.key === 'rfi'}
                   onClick={
                     k.key === 'pending'
                       ? () => navigate('/pending')
-                      : k.key === 'wpi'
-                        ? () => navigate('/wpi-dump')
-                        : k.key === 'issuedPolicies' || k.key === 'issuedPremium'
-                          ? () => navigate('/issuance')
-                          : k.key === 'submissions' || k.key === 'submittedPremium'
-                            ? () => navigate('/submission')
-                            : undefined
+                      : k.key === 'rfi'
+                        ? () => navigate('/rfi')
+                        : k.key === 'wpi'
+                          ? () => navigate('/wpi-dump')
+                          : k.key === 'issuedPolicies' || k.key === 'issuedPremium' || k.key === 'commission'
+                            ? () => navigate('/issuance')
+                            : k.key === 'submissions' || k.key === 'submittedPremium'
+                              ? () => navigate('/submission')
+                              : undefined
                   }
                 />
               ))}
@@ -101,25 +103,33 @@ export default function Dashboard() {
             <section className="grid gap-4 xl:grid-cols-3">
               <div className="xl:col-span-2">
                 <ChartCard
-                  title="Submission against issuance"
-                  description={`Counts per ${data.granularity}. The gap between the two lines is the pipeline still in underwriting.`}
+                  title="Issuance against submission"
+                  description={`Policies issued per ${data.granularity}, against the submissions they came from. The gap is the pipeline still in underwriting.`}
                   height={300}
                 >
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={data.trend} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
-                      <CartesianGrid stroke="#EEF2F8" vertical={false} />
-                      <XAxis dataKey="label" tick={AXIS_STYLE} tickLine={false} axisLine={{ stroke: '#E2E8F0' }} minTickGap={16} />
+                      <CartesianGrid stroke="#EAF2FB" vertical={false} />
+                      <XAxis dataKey="label" tick={AXIS_STYLE} tickLine={false} axisLine={{ stroke: '#DCE7F3' }} minTickGap={16} />
                       <YAxis tick={AXIS_STYLE} tickLine={false} axisLine={false} />
                       <RTooltip
-                        cursor={{ fill: '#F5F7FA' }}
+                        cursor={{ fill: '#EFF5FC' }}
                         content={({ active, payload, label }) =>
                           active && payload?.length ? (
                             <ChartTooltipBox
                               label={String(label)}
                               rows={[
-                                { name: 'Submissions', value: count(Number(payload[0]?.payload.submissions)), color: '#28456C' },
-                                { name: 'Issued', value: count(Number(payload[0]?.payload.issuance)), color: '#118E85' },
+                                { name: 'Issued', value: count(Number(payload[0]?.payload.issuance)), color: '#1476E0' },
+                                { name: 'Submitted', value: count(Number(payload[0]?.payload.submissions)), color: '#A6C8ED' },
                                 { name: 'Issued premium', value: inrCompact(Number(payload[0]?.payload.issuedPremium)) },
+                                {
+                                  name: 'Placement',
+                                  value: pct(
+                                    Number(payload[0]?.payload.submissions)
+                                      ? (Number(payload[0]?.payload.issuance) / Number(payload[0]?.payload.submissions)) * 100
+                                      : 0,
+                                  ),
+                                },
                               ]}
                             />
                           ) : null
@@ -128,15 +138,16 @@ export default function Dashboard() {
                       <Legend
                         iconType="circle"
                         iconSize={7}
-                        wrapperStyle={{ fontSize: 12, color: '#5C7CA9', paddingTop: 8 }}
+                        wrapperStyle={{ fontSize: 12, color: '#4D8CD0', paddingTop: 8 }}
                       />
-                      <Bar dataKey="submissions" name="Submissions" fill="#C9D6E8" radius={[3, 3, 0, 0]} maxBarSize={26} />
+                      <Bar dataKey="issuance" name="Issued" fill="#1476E0" radius={[3, 3, 0, 0]} maxBarSize={26} />
                       <Line
                         type="monotone"
-                        dataKey="issuance"
-                        name="Issued"
-                        stroke="#118E85"
-                        strokeWidth={2.25}
+                        dataKey="submissions"
+                        name="Submitted"
+                        stroke="#79ABE1"
+                        strokeWidth={2}
+                        strokeDasharray="5 4"
                         dot={false}
                         activeDot={{ r: 4 }}
                       />
@@ -147,13 +158,13 @@ export default function Dashboard() {
 
               <ChartCard
                 title="Premium performance"
-                description="Submitted against issued premium for the same buckets."
+                description="Issued against submitted premium for the same buckets."
                 height={300}
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data.trend} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
-                    <CartesianGrid stroke="#EEF2F8" vertical={false} />
-                    <XAxis dataKey="label" tick={AXIS_STYLE} tickLine={false} axisLine={{ stroke: '#E2E8F0' }} minTickGap={20} />
+                    <CartesianGrid stroke="#EAF2FB" vertical={false} />
+                    <XAxis dataKey="label" tick={AXIS_STYLE} tickLine={false} axisLine={{ stroke: '#DCE7F3' }} minTickGap={20} />
                     <YAxis
                       tick={AXIS_STYLE}
                       tickLine={false}
@@ -161,7 +172,7 @@ export default function Dashboard() {
                       tickFormatter={(v) => inrCompact(Number(v)).replace('₹', '')}
                     />
                     <RTooltip
-                      cursor={{ fill: '#F5F7FA' }}
+                      cursor={{ fill: '#EFF5FC' }}
                       content={({ active, payload, label }) =>
                         active && payload?.length ? (
                           <ChartTooltipBox
@@ -175,9 +186,9 @@ export default function Dashboard() {
                         ) : null
                       }
                     />
-                    <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 12, color: '#5C7CA9', paddingTop: 8 }} />
-                    <Bar dataKey="submittedPremium" name="Submitted" fill="#B6C5DD" radius={[3, 3, 0, 0]} maxBarSize={18} />
-                    <Bar dataKey="issuedPremium" name="Issued" fill="#118E85" radius={[3, 3, 0, 0]} maxBarSize={18} />
+                    <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 12, color: '#4D8CD0', paddingTop: 8 }} />
+                    <Bar dataKey="issuedPremium" name="Issued" fill="#1476E0" radius={[3, 3, 0, 0]} maxBarSize={18} />
+                    <Bar dataKey="submittedPremium" name="Submitted" fill="#A6C8ED" radius={[3, 3, 0, 0]} maxBarSize={18} />
                   </BarChart>
                 </ResponsiveContainer>
               </ChartCard>
@@ -351,7 +362,7 @@ export default function Dashboard() {
 
             <AnalyticsCard
               title="Top performers"
-              description="Advisors ranked by issued premium in the selected period."
+              description="Advisors ranked by issued premium, with the first-year commission that earns them."
               action={
                 <Button variant="ghost" size="sm" onClick={() => navigate('/issuance')}>
                   Open issuance report
@@ -369,7 +380,7 @@ export default function Dashboard() {
                 />
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[720px] text-[13px]">
+                  <table className="w-full min-w-[800px] text-[13px]">
                     <thead>
                       <tr className="border-y border-line bg-paper text-[11px] font-semibold text-navy-500">
                         <th className="px-5 py-2 text-left">Rank</th>
@@ -378,6 +389,7 @@ export default function Dashboard() {
                         <th className="px-3 py-2 text-left">Channel</th>
                         <th className="px-3 py-2 text-right">Policies</th>
                         <th className="px-3 py-2 text-right">Issued premium</th>
+                        <th className="px-3 py-2 text-right">Commission</th>
                         <th className="px-5 py-2 text-right">Placement</th>
                       </tr>
                     </thead>
@@ -390,6 +402,7 @@ export default function Dashboard() {
                           <td className="px-3 py-2.5 text-navy-600">{p.channel}</td>
                           <td className="num px-3 py-2.5 text-right text-navy-800">{count(p.policies)}</td>
                           <td className="num px-3 py-2.5 text-right font-medium text-navy-900">{inrCompact(p.premium)}</td>
+                          <td className="num px-3 py-2.5 text-right text-reef-700">{inrCompact(p.commission)}</td>
                           <td className="num px-5 py-2.5 text-right text-navy-600">{pct(p.placementRate)}</td>
                         </tr>
                       ))}

@@ -24,6 +24,7 @@ import type {
   PeriodKey,
   RegionRanking,
   SliceDatum,
+  RfiRow,
   SubmissionRecord,
   TopPerformer,
   TrendPoint,
@@ -221,8 +222,8 @@ export async function getDashboard(f: FilterState): Promise<DashboardData> {
 
   const subs = filterSubmissions(f)
   const iss = filterIssuances(f)
-  const pen = filterPending(f, { start: '2000-01-01', end: f.range.end })
-  const wpi = filterWpi(f, { start: '2000-01-01', end: f.range.end })
+  const pen = filterPending(f)
+  const wpi = filterWpi(f)
 
   const pSubs = filterSubmissions(f, prev)
   const pIss = filterIssuances(f, prev)
@@ -237,6 +238,9 @@ export async function getDashboard(f: FilterState): Promise<DashboardData> {
   const prevAvgPremium = pIss.length ? prevIssuedPremium / pIss.length : 0
   const pendingPremium = sum(pen.map((p) => p.annualPremium))
   const wpiPremium = sum(wpi.map((w) => w.annualPremium))
+  const commission = sum(iss.map((i) => i.commissionAmount))
+  const prevCommission = sum(pIss.map((i) => i.commissionAmount))
+  const rfi = summariseRfis(pen)
 
   const kpis: KpiValue[] = [
     {
@@ -296,6 +300,26 @@ export async function getDashboard(f: FilterState): Promise<DashboardData> {
       previousDisplay: count(Math.round(wpi.length * 1.12)),
       spark: sparkline(f.range, (r) => filterWpi(f, r).length),
       hint: `${inrCompact(wpiPremium)} premium awaiting requirements`,
+    },
+    {
+      key: 'commission',
+      label: 'Commission payable',
+      value: commission,
+      display: inrCompact(commission),
+      changePct: change(commission, prevCommission),
+      previousDisplay: inrCompact(prevCommission),
+      spark: sparkline(f.range, (r) => sum(filterIssuances(f, r).map((i) => i.commissionAmount))),
+      hint: `First-year commission on issued business — ${pct(issuedPremium ? (commission / issuedPremium) * 100 : 0)} of issued premium`,
+    },
+    {
+      key: 'rfi',
+      label: 'Open RFIs',
+      value: rfi.open,
+      display: count(rfi.open),
+      changePct: change(rfi.open, Math.round(rfi.open * 1.08)),
+      previousDisplay: count(Math.round(rfi.open * 1.08)),
+      spark: sparkline(f.range, (r) => summariseRfis(filterPending(f, r)).open),
+      hint: `${count(rfi.overdue)} past their service commitment`,
     },
     {
       key: 'placement',
@@ -403,9 +427,20 @@ export async function getDashboard(f: FilterState): Promise<DashboardData> {
     const key = `${i.advisor}|${i.branch}`
     const cur =
       perfMap.get(key) ??
-      ({ rank: 0, advisor: i.advisor, branch: i.branch, region: i.region, channel: i.channel, policies: 0, premium: 0, placementRate: 0 } as TopPerformer)
+      ({
+        rank: 0,
+        advisor: i.advisor,
+        branch: i.branch,
+        region: i.region,
+        channel: i.channel,
+        policies: 0,
+        premium: 0,
+        commission: 0,
+        placementRate: 0,
+      } as TopPerformer)
     cur.policies += 1
     cur.premium += i.issuedPremium
+    cur.commission += i.commissionAmount
     perfMap.set(key, cur)
   }
   const topPerformers = [...perfMap.values()]
@@ -469,6 +504,10 @@ export async function getIssuanceReport(f: FilterState) {
   const prevPremium = sum(prev.map((r) => r.issuedPremium))
   const placement = subs.length ? (rows.length / subs.length) * 100 : 0
   const prevPlacement = prevSubs.length ? (prev.length / prevSubs.length) * 100 : 0
+  const commission = sum(rows.map((r) => r.commissionAmount))
+  const prevCommission = sum(prev.map((r) => r.commissionAmount))
+  const effectiveRate = premium ? (commission / premium) * 100 : 0
+  const prevEffectiveRate = prevPremium ? (prevCommission / prevPremium) * 100 : 0
   const kpis: KpiValue[] = [
     kpi('issCount', 'Issued policies', rows.length, count(rows.length), prev.length, count(prev.length)),
     kpi('issPrem', 'Issued premium', premium, inrCompact(premium), prevPremium, inrCompact(prevPremium)),
@@ -481,6 +520,15 @@ export async function getIssuanceReport(f: FilterState) {
       inrCompact(prev.length ? prevPremium / prev.length : 0),
     ),
     kpi('issPlace', 'Placement rate', placement, pct(placement), prevPlacement, pct(prevPlacement)),
+    kpi('issComm', 'Commission payable', commission, inrCompact(commission), prevCommission, inrCompact(prevCommission)),
+    kpi(
+      'issCommRate',
+      'Effective commission rate',
+      effectiveRate,
+      pct(effectiveRate, 2),
+      prevEffectiveRate,
+      pct(prevEffectiveRate, 2),
+    ),
   ]
   const tatBuckets = [
     { label: '0–7 days', min: 0, max: 7 },
@@ -489,7 +537,9 @@ export async function getIssuanceReport(f: FilterState) {
     { label: '22–30 days', min: 22, max: 30 },
     { label: '30+ days', min: 31, max: 999 },
   ].map((b) => ({ name: b.label, value: rows.filter((r) => r.turnaroundDays >= b.min && r.turnaroundDays <= b.max).length, premium: 0 }))
-  return delay({ rows, kpis, tatBuckets })
+  const commissionByProduct = groupSlice(rows, (r) => r.product, (r) => r.commissionAmount)
+  const commissionByChannel = groupSlice(rows, (r) => r.channel, (r) => r.commissionAmount)
+  return delay({ rows, kpis, tatBuckets, commissionByProduct, commissionByChannel })
 }
 
 export async function getPendingReport(f: FilterState) {
@@ -583,6 +633,7 @@ export interface TeamMemberStats {
   submittedPremium: number
   issued: number
   issuedPremium: number
+  commission: number
   placementRate: number
   pending: number
   pendingPremium: number
@@ -599,6 +650,7 @@ export interface TeamOverview {
     submissions: number
     issued: number
     issuedPremium: number
+    commission: number
     pending: number
     openRfis: number
   }
@@ -611,10 +663,8 @@ function statsFor(f: FilterState, employee: Employee): TeamMemberStats {
   const subs = filterSubmissions(scoped)
   const iss = filterIssuances(scoped)
   const prevIss = filterIssuances(scoped, prev)
-  // Pending and WPI are point-in-time stocks, not period flows.
-  const openWindow = { start: '2000-01-01', end: f.range.end }
-  const pen = filterPending(scoped, openWindow)
-  const wpi = filterWpi(scoped, openWindow)
+  const pen = filterPending(scoped)
+  const wpi = filterWpi(scoped)
 
   const issuedPremium = sum(iss.map((i) => i.issuedPremium))
 
@@ -626,6 +676,7 @@ function statsFor(f: FilterState, employee: Employee): TeamMemberStats {
     submittedPremium: sum(subs.map((s) => s.annualPremium)),
     issued: iss.length,
     issuedPremium,
+    commission: sum(iss.map((i) => i.commissionAmount)),
     placementRate: subs.length ? (iss.length / subs.length) * 100 : 0,
     pending: pen.length,
     pendingPremium: sum(pen.map((p) => p.annualPremium)),
@@ -650,6 +701,7 @@ export async function getTeamOverview(f: FilterState, managerId: string): Promis
       submissions: sum(members.map((m) => m.submissions)),
       issued: sum(members.map((m) => m.issued)),
       issuedPremium: sum(members.map((m) => m.issuedPremium)),
+      commission: sum(members.map((m) => m.commission)),
       pending: sum(members.map((m) => m.pending)),
       openRfis: sum(members.map((m) => m.openRfis)),
     },
@@ -692,4 +744,67 @@ export function summariseRfis(rows: PendingRecord[]): RfiSummary {
     byResponsibility: group((r) => r.responsibility),
     byRequirement: group((r) => r.requirement),
   }
+}
+
+/** Flattens pending cases into one row per requirement for the RFI report. */
+export async function getRfiReport(f: FilterState) {
+  const cases = filterPending(f)
+
+  const rows: RfiRow[] = cases.flatMap((c) =>
+    c.rfis.map((r) => ({
+      ...r,
+      rowId: `${c.id}-${r.id}`,
+      proposalNo: c.proposalNo,
+      customer: c.customer,
+      product: c.product,
+      channel: c.channel,
+      branch: c.branch,
+      region: c.region,
+      manager: c.manager,
+      advisor: c.advisor,
+      annualPremium: c.annualPremium,
+      caseAgeDays: c.ageDays,
+      caseReason: c.reason,
+      case: c,
+    })),
+  )
+
+  const summary = summariseRfis(cases)
+  const openRows = rows.filter((r) => r.status !== 'Closed' && r.status !== 'Waived')
+  const premiumHeld = sum(
+    [...new Set(openRows.map((r) => r.proposalNo))].map(
+      (p) => cases.find((c) => c.proposalNo === p)?.annualPremium ?? 0,
+    ),
+  )
+
+  const kpis: KpiValue[] = [
+    kpi('rfiOpen', 'Open requirements', summary.open, count(summary.open), Math.round(summary.open * 1.08), count(Math.round(summary.open * 1.08))),
+    kpi('rfiOverdue', 'Past due', summary.overdue, count(summary.overdue), Math.round(summary.overdue * 1.14), count(Math.round(summary.overdue * 1.14))),
+    kpi('rfiCases', 'Cases affected', new Set(openRows.map((r) => r.proposalNo)).size, count(new Set(openRows.map((r) => r.proposalNo)).size), Math.round(new Set(openRows.map((r) => r.proposalNo)).size * 1.06), count(Math.round(new Set(openRows.map((r) => r.proposalNo)).size * 1.06))),
+    kpi('rfiPremium', 'Premium held up', premiumHeld, inrCompact(premiumHeld), premiumHeld * 1.05, inrCompact(premiumHeld * 1.05)),
+    kpi('rfiAge', 'Average open age', summary.averageOpenAgeDays, `${summary.averageOpenAgeDays.toFixed(1)} days`, summary.averageOpenAgeDays * 1.04, `${(summary.averageOpenAgeDays * 1.04).toFixed(1)} days`),
+    kpi('rfiReview', 'Awaiting our review', summary.respondedAwaitingReview, count(summary.respondedAwaitingReview), Math.round(summary.respondedAwaitingReview * 0.94), count(Math.round(summary.respondedAwaitingReview * 0.94))),
+  ]
+
+  const ageBands = [
+    { label: '0–3', min: 0, max: 3 },
+    { label: '4–7', min: 4, max: 7 },
+    { label: '8–15', min: 8, max: 15 },
+    { label: '16–30', min: 16, max: 30 },
+    { label: '30+', min: 31, max: 99999 },
+  ].map((b) => ({
+    name: b.label,
+    value: openRows.filter((r) => r.ageDays >= b.min && r.ageDays <= b.max).length,
+    premium: sum(openRows.filter((r) => r.ageDays >= b.min && r.ageDays <= b.max).map((r) => r.annualPremium)),
+  }))
+
+  return delay({
+    rows,
+    kpis,
+    summary,
+    ageBands,
+    byResponsibility: summary.byResponsibility,
+    byRequirement: summary.byRequirement,
+    byStatus: groupSlice(rows, (r) => r.status, (r) => r.annualPremium),
+  })
 }

@@ -17,10 +17,15 @@ export function Header({ onOpenNav }: { onOpenNav: () => void }) {
   const displayRole = user ? `${user.roleLabel}${user.region ? ` · ${user.region}` : ''}` : ''
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line bg-white/95 px-4 backdrop-blur md:px-6">
+    <header className="z-20 flex h-16 shrink-0 items-center gap-3 border-b border-line bg-white px-4 md:px-6">
       <Button variant="ghost" size="icon" className="lg:hidden" onClick={onOpenNav} aria-label="Open navigation">
         <Menu className="h-5 w-5" />
       </Button>
+
+      <div className="hidden min-w-0 items-baseline gap-2 md:flex">
+        <span className="text-[15px] font-semibold text-navy-900">Bharat Sentinel Life</span>
+        <span className="text-[13px] text-navy-300">Sales analytics</span>
+      </div>
 
       <div className="relative ml-auto w-full max-w-sm md:ml-6 md:mr-auto">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-300" />
