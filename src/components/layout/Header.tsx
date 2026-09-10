@@ -22,11 +22,6 @@ export function Header({ onOpenNav }: { onOpenNav: () => void }) {
         <Menu className="h-5 w-5" />
       </Button>
 
-      <div className="hidden min-w-0 items-baseline gap-2 md:flex">
-        <span className="text-[15px] font-semibold text-navy-900">Bharat Sentinel Life</span>
-        <span className="text-[13px] text-navy-300">Sales analytics</span>
-      </div>
-
       <div className="relative ml-auto w-full max-w-sm md:ml-6 md:mr-auto">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-300" />
         <input

@@ -1,6 +1,5 @@
 import { NavLink } from 'react-router-dom'
 import {
-  BarChart3,
   ChevronsLeft,
   ChevronsRight,
   ClipboardList,
@@ -10,6 +9,7 @@ import {
   Timer,
   Users,
 } from 'lucide-react'
+import { BrandLogo, BrandMark } from './BrandLogo'
 import { cn } from '@/utils/cn'
 import { Tooltip } from '@/components/ui/tooltip'
 import { mockPending, mockWpi } from '@/data/mockInsuranceData'
@@ -50,17 +50,7 @@ export function AppSidebar({
         )}
       >
         <div className={cn('flex h-16 items-center border-b border-white/10', collapsed ? 'justify-center px-2' : 'px-4')}>
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-reef-500 text-white">
-              <BarChart3 className="h-4 w-4" strokeWidth={2.5} />
-            </span>
-            {!collapsed && (
-              <span className="leading-tight">
-                <span className="block text-[15px] font-semibold tracking-tight text-white">LifePulse</span>
-                <span className="block text-[11px] text-navy-300">Sales reporting</span>
-              </span>
-            )}
-          </div>
+          {collapsed ? <BrandMark className="h-7 w-7 shrink-0" /> : <BrandLogo />}
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-4">

@@ -1,5 +1,5 @@
 /**
- * Deterministic mock dataset for the LifePulse reporting portal.
+ * Deterministic mock dataset for the Canara HSBC Life Insurance sales reporting portal.
  * Everything here is fictional. No real customer, advisor or policy data.
  *
  * The generator is seeded so the numbers stay identical between reloads,
