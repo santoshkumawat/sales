@@ -1,0 +1,2 @@
+# Netlify: hand every path to the SPA so deep links and refreshes resolve.
+/*  /index.html  200
