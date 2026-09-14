@@ -75,17 +75,15 @@ export default function Dashboard() {
                   kpi={k}
                   invertChange={k.key === 'pending' || k.key === 'wpi' || k.key === 'rfi'}
                   onClick={
-                    k.key === 'pending'
+                    k.key === 'pending' || k.key === 'rfi'
                       ? () => navigate('/pending')
-                      : k.key === 'rfi'
-                        ? () => navigate('/rfi')
-                        : k.key === 'wpi'
-                          ? () => navigate('/wpi-dump')
-                          : k.key === 'issuedPolicies' || k.key === 'issuedPremium' || k.key === 'commission'
-                            ? () => navigate('/issuance')
-                            : k.key === 'submissions' || k.key === 'submittedPremium'
-                              ? () => navigate('/submission')
-                              : undefined
+                      : k.key === 'wpi'
+                        ? () => navigate('/wpi-dump')
+                        : k.key === 'issuedPolicies' || k.key === 'issuedPremium' || k.key === 'commission'
+                          ? () => navigate('/issuance')
+                          : k.key === 'submissions' || k.key === 'submittedPremium'
+                            ? () => navigate('/submission')
+                            : undefined
                   }
                 />
               ))}

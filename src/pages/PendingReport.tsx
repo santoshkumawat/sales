@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from 'recharts'
-import { AlertTriangle, ArrowUpRight, FileText, X } from 'lucide-react'
+import { AlertTriangle, FileText, X } from 'lucide-react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { ReportFilters } from '@/components/filters/ReportFilters'
 import { MetricCard } from '@/components/dashboard/MetricCard'
@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button'
 import { useReportData } from '@/hooks/useReportData'
 import { getPendingReport } from '@/services/reportService'
 import { useFilters } from '@/context/FilterContext'
-import { useNavigate } from 'react-router-dom'
 import { PENDING_REASONS } from '@/data/mockInsuranceData'
 import type { PendingRecord } from '@/types'
 import { RfiDetailDrawer } from '@/components/pending/RfiDetailDrawer'
@@ -130,7 +129,6 @@ const columns: Column<PendingRecord>[] = [
 export default function PendingReport() {
   const { data, loading } = useReportData(getPendingReport)
   const { reset } = useFilters()
-  const navigate = useNavigate()
   const [reason, setReason] = useState<string | null>(null)
   const [band, setBand] = useState<string | null>(null)
   const [openCase, setOpenCase] = useState<PendingRecord | null>(null)
@@ -268,13 +266,9 @@ export default function PendingReport() {
               <div>
                 <p className="text-[15px] font-semibold text-navy-900">Requirements for information</p>
                 <p className="text-[13px] text-navy-400">
-                  Open requirements across the cases in view. Filter here, or open the full RFI report.
+                  Open requirements across the cases in view. Filter here, or open a case for its full history.
                 </p>
               </div>
-              <Button variant="outline" size="sm" className="ml-auto" onClick={() => navigate('/rfi')}>
-                Open RFI report
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              </Button>
             </div>
             <div className="grid grid-cols-2 gap-px bg-line lg:grid-cols-5">
               {[
