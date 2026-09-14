@@ -111,6 +111,7 @@ export const WPI_STATUSES: WpiStatus[] = ['New', 'In Progress', 'Action Required
 export const POLICY_STATUSES: PolicyStatus[] = ['In Force', 'Free Look', 'Lapsed', 'Surrendered']
 
 const name = () => `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`
+const phone = () => `+91 ${pick(['6', '7', '8', '9'])}${String(intBetween(0, 999999999)).padStart(9, '0')}`
 
 /* -------------------------------- calendar ------------------------------- */
 
@@ -432,6 +433,7 @@ for (let t = INCEPTION.getTime(); t <= TODAY.getTime(); t += DAY) {
         employeeId,
         proposalNo,
         customer: name(),
+        customerPhone: phone(),
         product,
         channel,
         branch,

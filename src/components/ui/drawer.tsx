@@ -13,7 +13,7 @@ export function Drawer({
   open: boolean
   onClose: () => void
   title: string
-  description?: string
+  description?: ReactNode
   footer?: ReactNode
   children: ReactNode
 }) {

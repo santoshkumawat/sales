@@ -126,6 +126,7 @@ export interface PendingRecord {
   employeeId: string
   proposalNo: string
   customer: string
+  customerPhone: string
   product: string
   channel: string
   branch: string

@@ -1,4 +1,4 @@
-import { AlertTriangle, CalendarClock, FileText, MessageSquare } from 'lucide-react'
+import { AlertTriangle, CalendarClock, FileText, MessageSquare, Phone } from 'lucide-react'
 import { Drawer } from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -98,7 +98,20 @@ export function RfiDetailDrawer({
       open
       onClose={onClose}
       title={record.proposalNo}
-      description={`${record.customer} · ${record.product}`}
+      description={
+        <span className="inline-flex items-center gap-3">
+          <span>
+            {record.customer} · {record.product}
+          </span>
+          <a
+            href={`tel:${record.customerPhone.replace(/\s+/g, '')}`}
+            className="num inline-flex items-center gap-1 text-reef-600 hover:underline"
+          >
+            <Phone className="h-3.5 w-3.5" />
+            {record.customerPhone}
+          </a>
+        </span>
+      }
       footer={
         <div className="flex items-center gap-2">
           <Button variant="accent" className="flex-1">

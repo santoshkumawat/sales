@@ -3,7 +3,6 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ClipboardList,
-  FileQuestion,
   FileStack,
   LayoutDashboard,
   ShieldCheck,
@@ -21,13 +20,11 @@ const NAV = [
   { to: '/submission', label: 'Submission', icon: ClipboardList },
   { to: '/issuance', label: 'Issuance', icon: ShieldCheck },
   { to: '/pending', label: 'Pending', icon: Timer },
-  { to: '/rfi', label: 'RFI', icon: FileQuestion },
   { to: '/wpi-dump', label: 'WPI Dump', icon: FileStack },
 ]
 
 const openPending = mockPending.filter((p) => p.ageDays > 15).length
 const openWpi = mockWpi.filter((w) => w.status === 'Action Required').length
-const overdueRfi = mockPending.reduce((n, p) => n + p.rfis.filter((r) => r.overdue).length, 0)
 
 export function AppSidebar({
   collapsed,
@@ -62,7 +59,7 @@ export function AppSidebar({
           )}
           {NAV.map(({ to, label, icon: Icon, end }) => {
             const badge =
-              to === '/pending' ? openPending : to === '/rfi' ? overdueRfi : to === '/wpi-dump' ? openWpi : 0
+              to === '/pending' ? openPending : to === '/wpi-dump' ? openWpi : 0
             const link = (
               <NavLink
                 key={to}

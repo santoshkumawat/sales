@@ -24,7 +24,6 @@ import type {
   PeriodKey,
   RegionRanking,
   SliceDatum,
-  RfiRow,
   SubmissionRecord,
   TopPerformer,
   TrendPoint,
@@ -744,67 +743,4 @@ export function summariseRfis(rows: PendingRecord[]): RfiSummary {
     byResponsibility: group((r) => r.responsibility),
     byRequirement: group((r) => r.requirement),
   }
-}
-
-/** Flattens pending cases into one row per requirement for the RFI report. */
-export async function getRfiReport(f: FilterState) {
-  const cases = filterPending(f)
-
-  const rows: RfiRow[] = cases.flatMap((c) =>
-    c.rfis.map((r) => ({
-      ...r,
-      rowId: `${c.id}-${r.id}`,
-      proposalNo: c.proposalNo,
-      customer: c.customer,
-      product: c.product,
-      channel: c.channel,
-      branch: c.branch,
-      region: c.region,
-      manager: c.manager,
-      advisor: c.advisor,
-      annualPremium: c.annualPremium,
-      caseAgeDays: c.ageDays,
-      caseReason: c.reason,
-      case: c,
-    })),
-  )
-
-  const summary = summariseRfis(cases)
-  const openRows = rows.filter((r) => r.status !== 'Closed' && r.status !== 'Waived')
-  const premiumHeld = sum(
-    [...new Set(openRows.map((r) => r.proposalNo))].map(
-      (p) => cases.find((c) => c.proposalNo === p)?.annualPremium ?? 0,
-    ),
-  )
-
-  const kpis: KpiValue[] = [
-    kpi('rfiOpen', 'Open requirements', summary.open, count(summary.open), Math.round(summary.open * 1.08), count(Math.round(summary.open * 1.08))),
-    kpi('rfiOverdue', 'Past due', summary.overdue, count(summary.overdue), Math.round(summary.overdue * 1.14), count(Math.round(summary.overdue * 1.14))),
-    kpi('rfiCases', 'Cases affected', new Set(openRows.map((r) => r.proposalNo)).size, count(new Set(openRows.map((r) => r.proposalNo)).size), Math.round(new Set(openRows.map((r) => r.proposalNo)).size * 1.06), count(Math.round(new Set(openRows.map((r) => r.proposalNo)).size * 1.06))),
-    kpi('rfiPremium', 'Premium held up', premiumHeld, inrCompact(premiumHeld), premiumHeld * 1.05, inrCompact(premiumHeld * 1.05)),
-    kpi('rfiAge', 'Average open age', summary.averageOpenAgeDays, `${summary.averageOpenAgeDays.toFixed(1)} days`, summary.averageOpenAgeDays * 1.04, `${(summary.averageOpenAgeDays * 1.04).toFixed(1)} days`),
-    kpi('rfiReview', 'Awaiting our review', summary.respondedAwaitingReview, count(summary.respondedAwaitingReview), Math.round(summary.respondedAwaitingReview * 0.94), count(Math.round(summary.respondedAwaitingReview * 0.94))),
-  ]
-
-  const ageBands = [
-    { label: '0–3', min: 0, max: 3 },
-    { label: '4–7', min: 4, max: 7 },
-    { label: '8–15', min: 8, max: 15 },
-    { label: '16–30', min: 16, max: 30 },
-    { label: '30+', min: 31, max: 99999 },
-  ].map((b) => ({
-    name: b.label,
-    value: openRows.filter((r) => r.ageDays >= b.min && r.ageDays <= b.max).length,
-    premium: sum(openRows.filter((r) => r.ageDays >= b.min && r.ageDays <= b.max).map((r) => r.annualPremium)),
-  }))
-
-  return delay({
-    rows,
-    kpis,
-    summary,
-    ageBands,
-    byResponsibility: summary.byResponsibility,
-    byRequirement: summary.byRequirement,
-    byStatus: groupSlice(rows, (r) => r.status, (r) => r.annualPremium),
-  })
 }
