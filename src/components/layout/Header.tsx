@@ -23,7 +23,7 @@ export function Header({ onOpenNav }: { onOpenNav: () => void }) {
       </Button>
 
       <div className="hidden min-w-0 items-baseline gap-2 md:flex">
-        <span className="text-[15px] font-semibold text-navy-900">Canara HSBC Life Insurance</span>
+        <span className="text-[15px] font-semibold text-navy-900">XYZ Life</span>
         <span className="text-[13px] text-navy-300">Sales analytics</span>
       </div>
 
