@@ -46,15 +46,15 @@ export default function Login() {
         <div className="rounded-[28px] border border-white/70 bg-white/55 p-8 shadow-[0_24px_60px_-20px_rgba(0,76,151,0.35)] backdrop-blur-xl sm:p-10">
           <div className="flex flex-col items-center text-center">
             <img
-              src="/canara-hsbc-life-insurance-logo.svg"
-              alt="Canara HSBC Life Insurance"
+              src="/xyz-life-insurance-logo.svg"
+              alt="XYZ Life"
               className="h-11 w-auto"
             />
             <h1 className="mt-6 text-[22px] font-bold tracking-tight text-[#0F1F3D]">
               Sign in with email
             </h1>
             <p className="mt-2 max-w-[19rem] text-[13.5px] leading-relaxed text-[#5B6B85]">
-              Access your Canara HSBC Life sales book — submissions, issuance and pending, live.
+              Access your XYZ Life sales book — submissions, issuance and pending, live.
             </p>
           </div>
 
