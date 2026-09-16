@@ -13,7 +13,7 @@ const logoUrl = '/canara-hsbc-life-insurance-logo.svg'
 
 export function BrandMark({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 31 25" className={className} role="img" aria-label="Canara HSBC Life Insurance">
+    <svg viewBox="0 0 31 25" className={className} role="img" aria-label="XYZ Life">
       <path
         d="M13.1497 23.9364L16.6917 19.2251L14.029 18.8567L12.5312 20.6754C12.2053 21.0714 11.6617 20.8335 11.3784 20.6303L3.70406 15.1152C3.41364 14.9066 3.65879 14.5404 3.95998 14.4903L11.6496 13.2152L12.5683 11.6384L0.562257 13.6297C0.114964 13.7028 -0.225213 14.2176 0.183087 14.5549L11.4434 23.8687C11.8414 24.1979 12.6943 24.5442 13.1497 23.9364Z"
         fill="#FFC20E"
