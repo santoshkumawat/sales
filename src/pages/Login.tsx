@@ -51,7 +51,7 @@ export default function Login() {
               Sign in with email
             </h1>
             <p className="mt-2 max-w-[19rem] text-[13.5px] leading-relaxed text-[#5B6B85]">
-              Access your Bharat Sentinel Life sales book — submissions, issuance and pending, live.
+              Access your XYZ Life sales book — submissions, issuance and pending, live.
             </p>
           </div>
 

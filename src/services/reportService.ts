@@ -744,4 +744,3 @@ export function summariseRfis(rows: PendingRecord[]): RfiSummary {
     byRequirement: group((r) => r.requirement),
   }
 }
-

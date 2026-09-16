@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from 'recharts'
-import { AlertTriangle, FileText, X } from 'lucide-react'
+import { AlertTriangle, FileText, Phone, X } from 'lucide-react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { ReportFilters } from '@/components/filters/ReportFilters'
 import { MetricCard } from '@/components/dashboard/MetricCard'
@@ -83,7 +83,7 @@ const columns: Column<PendingRecord>[] = [
   },
   {
     key: 'openRfis',
-    header: 'Open RFIs',
+    header: 'Open PFRs',
     accessor: (r) => r.openRfis,
     cell: (r) => {
       const overdue = r.rfis.some((x) => x.overdue)
@@ -107,7 +107,7 @@ const columns: Column<PendingRecord>[] = [
   },
   {
     key: 'oldestRfiDays',
-    header: 'Oldest RFI',
+    header: 'Oldest PFR',
     accessor: (r) => r.oldestRfiDays,
     cell: (r) => <span className="num text-navy-600">{r.oldestRfiDays ? `${r.oldestRfiDays} d` : '—'}</span>,
     align: 'right',
@@ -126,6 +126,22 @@ const columns: Column<PendingRecord>[] = [
   },
 ]
 
+const CONTACT_COLUMN: Column<PendingRecord> = {
+  key: 'customerPhone',
+  header: 'Contact number',
+  accessor: (r) => r.customerPhone,
+  cell: (r) => (
+    <a
+      href={`tel:${r.customerPhone.replace(/\s+/g, '')}`}
+      onClick={(e) => e.stopPropagation()}
+      className="num inline-flex items-center gap-1.5 text-navy-700 hover:text-reef-600 hover:underline"
+    >
+      <Phone className="h-3.5 w-3.5 text-navy-400" />
+      {r.customerPhone}
+    </a>
+  ),
+}
+
 export default function PendingReport() {
   const { data, loading } = useReportData(getPendingReport)
   const { reset } = useFilters()
@@ -133,8 +149,9 @@ export default function PendingReport() {
   const [band, setBand] = useState<string | null>(null)
   const [openCase, setOpenCase] = useState<PendingRecord | null>(null)
   const [rfiOnly, setRfiOnly] = useState<'all' | 'open' | 'overdue'>('all')
+  const [view, setView] = useState<'all' | 'rfi' | 'pfr'>('all')
 
-  const rows = (data?.rows ?? []).filter((r) => {
+  const preViewRows = (data?.rows ?? []).filter((r) => {
     if (reason && r.reason !== reason) return false
     if (band) {
       const [min, max] = AGE_BANDS[band]
@@ -145,9 +162,24 @@ export default function PendingReport() {
     return true
   })
 
+  const rfiReadyCount = preViewRows.filter((r) => r.openRfis === 0).length
+  const pfrCount = preViewRows.filter((r) => r.openRfis > 0).length
+
+  const rows = preViewRows.filter((r) => {
+    if (view === 'rfi') return r.openRfis === 0
+    if (view === 'pfr') return r.openRfis > 0
+    return true
+  })
+
+  const tableColumns = useMemo(() => {
+    if (view !== 'pfr') return columns
+    const idx = columns.findIndex((c) => c.key === 'customer')
+    return [...columns.slice(0, idx + 1), CONTACT_COLUMN, ...columns.slice(idx + 1)]
+  }, [view])
+
   const rfi = summariseRfis(data?.rows ?? [])
 
-  const drillActive = reason || band || rfiOnly !== 'all'
+  const drillActive = reason || band || rfiOnly !== 'all' || view !== 'all'
 
   return (
     <>
@@ -159,6 +191,27 @@ export default function PendingReport() {
       <ReportFilters statusGroup={{ key: 'statuses', title: 'Pending reason', options: PENDING_REASONS }} />
 
       <div className="space-y-4 p-4 md:p-6">
+        <div className="flex w-fit flex-wrap gap-1 rounded-xl bg-navy-50 p-1">
+          {(
+            [
+              { key: 'all', label: 'All pending', count: preViewRows.length },
+              { key: 'rfi', label: 'RFI · Ready for issuance', count: rfiReadyCount },
+              { key: 'pfr', label: 'PFR · Pending for requirements', count: pfrCount },
+            ] as const
+          ).map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setView(t.key)}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors',
+                view === t.key ? 'bg-white text-navy-900 shadow-sm' : 'text-navy-500 hover:text-navy-800',
+              )}
+            >
+              {t.label} <span className="num text-navy-400">{count(t.count)}</span>
+            </button>
+          ))}
+        </div>
+
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
           {loading || !data
             ? Array.from({ length: 6 }).map((_, i) => <MetricCardSkeleton key={i} />)
@@ -260,11 +313,11 @@ export default function PendingReport() {
           </section>
         )}
 
-        {!loading && data && (
+        {!loading && data && view !== 'rfi' && (
           <div className="surface overflow-hidden">
             <div className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-3">
               <div>
-                <p className="text-[15px] font-semibold text-navy-900">Requirements for information</p>
+                <p className="text-[15px] font-semibold text-navy-900">PFR · Pending for requirements</p>
                 <p className="text-[13px] text-navy-400">
                   Open requirements across the cases in view. Filter here, or open a case for its full history.
                 </p>
@@ -272,7 +325,7 @@ export default function PendingReport() {
             </div>
             <div className="grid grid-cols-2 gap-px bg-line lg:grid-cols-5">
               {[
-                { label: 'Open RFIs', value: count(rfi.open), filter: 'open' as const },
+                { label: 'Open PFRs', value: count(rfi.open), filter: 'open' as const },
                 { label: 'Past due', value: count(rfi.overdue), filter: 'overdue' as const, alert: rfi.overdue > 0 },
                 { label: 'Awaiting our review', value: count(rfi.respondedAwaitingReview) },
                 { label: 'Closed or waived', value: count(rfi.closedOrWaived) },
@@ -303,7 +356,8 @@ export default function PendingReport() {
             <span className="text-[12px] font-medium text-reef-800">
               Drilled into{' '}
               {[reason ? `${reason} pending` : null, band ? `${band} days` : null,
-                rfiOnly === 'open' ? 'cases with open RFIs' : rfiOnly === 'overdue' ? 'cases with overdue RFIs' : null]
+                view === 'rfi' ? 'RFI · ready for issuance' : view === 'pfr' ? 'PFR · pending for requirements' : null,
+                rfiOnly === 'open' ? 'cases with open PFRs' : rfiOnly === 'overdue' ? 'cases with overdue PFRs' : null]
                 .filter(Boolean)
                 .join(' · ')}{' '}
               — {count(rows.length)} cases
@@ -316,6 +370,7 @@ export default function PendingReport() {
                 setReason(null)
                 setBand(null)
                 setRfiOnly('all')
+                setView('all')
               }}
             >
               <X className="h-3.5 w-3.5" />
@@ -329,7 +384,7 @@ export default function PendingReport() {
         ) : (
           <DataTable
             rows={rows}
-            columns={columns}
+            columns={tableColumns}
             rowKey={(r) => r.id}
             exportName="pending-report"
             initialSort={{ key: 'ageDays', dir: 'desc' }}

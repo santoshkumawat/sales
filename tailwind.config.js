@@ -8,7 +8,7 @@ export default {
         mono: ['"IBM Plex Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       colors: {
-        // Bharat Sentinel Life — primary blue family
+        // XYZ Life — primary blue family
         navy: {
           50: '#EAF2FB',
           100: '#D2E4F6',
