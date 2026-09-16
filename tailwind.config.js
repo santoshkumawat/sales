@@ -8,7 +8,7 @@ export default {
         mono: ['"IBM Plex Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       colors: {
-        // Canara HSBC Life Insurance — primary blue family (canarahsbclife.com)
+        // XYZ Life — primary blue family
         navy: {
           50: '#EAF2FB',
           100: '#D2E4F6',
