@@ -48,7 +48,7 @@ const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(rng() * arr.length)]
 const fullName = () => `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`
 
 function slugEmail(name: string, code: string) {
-  return `${name.toLowerCase().replace(/[^a-z]/g, '.')}.${code.slice(-4)}@canarahsbclife.example`
+  return `${name.toLowerCase().replace(/[^a-z]/g, '.')}.${code.slice(-4)}@bharatsentinellife.example`
 }
 
 function buildOrg() {
