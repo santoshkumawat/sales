@@ -1,7 +1,7 @@
 import { cn } from '@/utils/cn'
 
 /** Served from public/ — see vite's static asset handling. */
-const logoUrl = '/canara-hsbc-life-insurance-logo.svg'
+const logoUrl = '/xyz-life-insurance-logo.svg'
 
 /**
  * Canara HSBC Life Insurance brand assets.
@@ -33,7 +33,7 @@ export function BrandMark({ className }: { className?: string }) {
 export function BrandLogo({ className }: { className?: string }) {
   return (
     <span className={cn('inline-flex rounded-lg bg-white px-2.5 py-1.5 shadow-sm', className)}>
-      <img src={logoUrl} alt="Canara HSBC Life Insurance" className="h-7 w-auto" />
+      <img src={logoUrl} alt="XYZ Life" className="h-7 w-auto" />
     </span>
   )
 }
